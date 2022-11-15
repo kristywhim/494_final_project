@@ -1,0 +1,32 @@
+# Control for population structure
+
+```{r}
+#Load
+library(GENESIS)
+library(GWASTools)
+```
+
+# Data loading and description
+
+To demonstrate PC-AiR and PC-Relate analyses with the GENESIS package, we analyze SNP data from the Mexican Americans in Los Angeles, California (MXL) and African American individuals in the southwestern USA (ASW) population samples of HapMap 3. Mexican Americans and African Americans have a diverse ancestral background, and familial relatives are present in these data. Genotype data at a subset of 20K autosomal SNPs for 173 individuals are provided as a GDS file.
+
+```{r load data}
+gdsfile <- system.file("extdata", "HapMap_ASW_MXL_geno.gds", package="GENESIS")
+geno <- GdsGenotypeReader(filename = gdsfile)
+genoData <- GenotypeData(geno)
+```
+
+# PC-AiR
+
+## LD pruning
+
+```{r}
+library(SNPRelate)
+# read in GDS data
+gds <- snpgdsOpen(gdsfile,allow.duplicate = TRUE)
+
+snpset <- snpgdsLDpruning(gds, method="corr", slide.max.bp=10e6, 
+                          ld.threshold=sqrt(0.1), verbose=FALSE)
+pruned <- unlist(snpset, use.names=FALSE)
+length(pruned)
+```
