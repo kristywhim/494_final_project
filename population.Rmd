@@ -25,8 +25,25 @@ library(SNPRelate)
 # read in GDS data
 gds <- snpgdsOpen(gdsfile,allow.duplicate = TRUE)
 
-snpset <- snpgdsLDpruning(gds, method="corr", slide.max.bp=10e6, 
+snpset <- snpgdsLDpruning(gds, method="corr",
+                          slide.max.bp=10e6, 
                           ld.threshold=sqrt(0.1), verbose=FALSE)
 pruned <- unlist(snpset, use.names=FALSE)
 length(pruned)
+```
+
+## Simulate Phenotype
+```{r}
+sample.id <- read.gdsn(index.gdsn(gds, "sample.id"))
+
+# simulation
+pheno <- rnorm(173)
+
+mydat <- data.frame(scanID = sample.id, 
+                    pheno = pheno)
+
+scanAnnot <- ScanAnnotationDataFrame(mydat)
+
+HapMap_genoData <- GenotypeData(geno, scanAnnot = scanAnnot)
+HapMap_genoData
 ```
