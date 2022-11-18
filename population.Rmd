@@ -14,6 +14,8 @@ To demonstrate PC-AiR and PC-Relate analyses with the GENESIS package, we analyz
 gdsfile <- system.file("extdata", "HapMap_ASW_MXL_geno.gds", package="GENESIS")
 geno <- GdsGenotypeReader(filename = gdsfile)
 genoData <- GenotypeData(geno)
+
+nsnp(genoData)
 ```
 
 # PC-AiR
@@ -22,7 +24,7 @@ genoData <- GenotypeData(geno)
 
 ```{r}
 library(SNPRelate)
-# read in GDS data
+# read 12 GDS data
 gds <- snpgdsOpen(gdsfile,allow.duplicate = TRUE)
 
 snpset <- snpgdsLDpruning(gds, method="corr",
@@ -46,4 +48,45 @@ scanAnnot <- ScanAnnotationDataFrame(mydat)
 
 HapMap_genoData <- GenotypeData(geno, scanAnnot = scanAnnot)
 HapMap_genoData
+```
+
+```{r}
+Kingoutput <- snpgdsIBDKING(gds)
+
+sample.id <- Kingoutput$sample.id
+
+king.matrix <- Kingoutput$kinship
+
+colnames(king.matrix) <- sample.id
+
+partition <- pcairPartition(kinobj = king.matrix ,divobj = king.matrix)
+
+# 91 individuals
+related <- partition$rels
+
+# 82 individuals
+unrelated <- partition$unrels
+
+getScanID(HapMap_genoData)
+
+related.index <- c()
+a <- 0
+
+for(i in 1:173){
+  name <- getScanID(HapMap_genoData,i)
+  if (name%in%related){
+    related.index[a] <- i
+    a <- a+1
+  }
+}
+
+related.index
+
+#snpID <- getSnpID(HapMap_genoData)
+#genotype <- getGenotype(HapMap_genoData, snpID, scan = c(1,2,4,5))
+#chromosome <- getChromosome(HapMap_genoData)
+#position <- getPosition(HapMap_genoData)
+#scanID <- getScanID(HapMap_genoData, related.index)
+
+#MatrixGenotypeReader(genotype=genotype, snpID=snpID, chromosome=chromosome, position=position, scanID=related.index)
 ```
