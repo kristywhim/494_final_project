@@ -155,7 +155,28 @@ y_cor_asso <- cor.geno[,"rs3766191"]*2 + cor.geno[,"rs2985855"] * 2 + rnorm(165,
 y_uncor_asso <- uncor.geno[,"rs3766191"]*2 + uncor.geno[,"rs2985855"] * 2 + rnorm(107, mean = 50, sd = 2)
 ```
 
+### write plink
+```{r}
+# cor
+write.plink(file.base="LMM", 
+            snps=cor_geno,
+            subject.data=cor_fam, 
+            phenotype = as.numeric(y_cor_null), 
+            sex = as.numeric(cor_fam$sex),
+            snp.major=FALSE)
 
+fam <- 'LMM.fam'
+bim <- 'LMM.bim'
+bed <- 'LMM.bed'
+
+snpgdsBED2GDS(bed, fam, bim, "cor_null.gds")
+
+# open
+genofile <- snpgdsOpen("cor_null.gds")
+genofile
+# close
+snpgdsClose(genofile)
+```
 # Run LM model
 
 ## Run LM - uncorr, null model
