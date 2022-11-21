@@ -73,12 +73,14 @@ unrelated <- partition$unrels
 -   `map` contains information on each SNP
 
 
-## Format map (remove monomorphic)
+## Remove monomorphic from map and genotype
 ```{r remove-mono-from-map}
 maf <- col.summary(hapmap$genotypes)$MAF
 hapmap$map <- hapmap$map %>%
   mutate(MAF = maf) %>% filter(MAF > 0)
 # nrow(hapmap$map)  1283751 left
+
+hapmap$genotypes <- hapmap$genotypes[,hapmap$map$snp.name]
 ```
 
 
@@ -106,12 +108,12 @@ for (i in 1:165){
   }
 }
 
-#uncor geno is weird-- only 106 individuals
+
 uncor_geno <- hapmap$genotypes[related.index]  #genotype information
 uncor_fam <- hapmap$fam[rownames(hapmap$fam) %in% unrelated, ] #family information
 ```
 
-## remove monomorphic from geno
+## Format genodata for LM + PCA
 ```{r format geno data}
 geno <- as(uncor_geno, "numeric")
 uncor_geno <- which(maf != 0) 
@@ -121,9 +123,22 @@ geno.clean <- geno[,-monomorphic]
 ```
 
 ## Shrinking SNP number
+```{r}
+## correlated
+cor_geno <- cor_geno[,1:500]
 
+## uncorrelated
+uncor_geno <- uncor_geno[,1:500]
+
+map <- map %>% 
+  filter(snp.name %in% colnames(cor_geno))
+```
 
 ## Simulate trait
+```{r}
+
+
+```
 
 
 # Run LM model
