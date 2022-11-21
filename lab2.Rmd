@@ -38,13 +38,13 @@ hapmap <- read.plink(bed, bim, fam)
 names(hapmap)
 
 
-snpgdsBED2GDS(bed, fam, bim, "lab2.gds")
+# snpgdsBED2GDS(bed, fam, bim, "lab2.gds")
 
 # open
-genofile <- snpgdsOpen("lab2.gds")
-genofile
-# close
-snpgdsClose(genofile)
+# genofile <- snpgdsOpen("lab2.gds")
+# genofile
+# # close
+# snpgdsClose(genofile)
 ```
 
 ## Separate two sets: get uncorr, corr names
@@ -73,13 +73,15 @@ unrelated <- partition$unrels
 -   `map` contains information on each SNP
 
 
-## Remove monomorphic from map
+## Format map (remove monomorphic)
 ```{r remove-mono-from-map}
 maf <- col.summary(hapmap$genotypes)$MAF
 hapmap$map <- hapmap$map %>%
   mutate(MAF = maf) %>% filter(MAF > 0)
 # nrow(hapmap$map)  1283751 left
 ```
+
+
 
 ## Explore correlated dataset (just hapmap itself!)
 
@@ -95,7 +97,7 @@ map <- hapmap$map    #SNPs information (can be used for both correlated and unco
 
 ```{r explore-uncorrelated-dataset}
 related.index <- c()
-a <- 0
+a <- 1
 
 for (i in 1:165){
   if (rownames(hapmap$genotypes[i,])%in%unrelated){
@@ -109,6 +111,14 @@ uncor_geno <- hapmap$genotypes[related.index]  #genotype information
 uncor_fam <- hapmap$fam[rownames(hapmap$fam) %in% unrelated, ] #family information
 ```
 
+## remove monomorphic from geno
+```{r format geno data}
+geno <- as(uncor_geno, "numeric")
+uncor_geno <- which(maf != 0) 
+monomorphic <- which(maf == 0) 
+geno.clean <- geno[,-monomorphic]
+
+```
 
 ## Shrinking SNP number
 
