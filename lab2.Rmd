@@ -76,6 +76,7 @@ unrelated <- partition$unrels
 ## Remove monomorphic from map and genotype
 ```{r remove-mono-from-map}
 maf <- col.summary(hapmap$genotypes)$MAF
+
 hapmap$map <- hapmap$map %>%
   mutate(MAF = maf) %>% filter(MAF > 0)
 # nrow(hapmap$map)  1283751 left
@@ -112,14 +113,15 @@ uncor_fam <- hapmap$fam[rownames(hapmap$fam) %in% unrelated, ] #family informati
 
 ## Format genodata for LM + PCA
 ```{r format geno data}
-monomorphic <- which(maf == 0)
-# uncorr
-uncor.geno <- as(uncor_geno, "numeric")
-uncor.geno <- uncor.geno[,-monomorphic]
-
 # corr
 cor.geno <- as(cor_geno, "numeric")
-cor.geno <- uncor.geno[,-monomorphic]
+# nrow(cor.geno)
+# ncol(cor.geno)  this is 165*1283571
+
+# uncorr
+uncor.geno <- as(uncor_geno, "numeric")
+# nrow(uncor.geno)
+# ncol(uncor.geno) this is 107*1283571
 ```
 
 ## Shrinking SNP number
