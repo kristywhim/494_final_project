@@ -83,8 +83,6 @@ hapmap$map <- hapmap$map %>%
 hapmap$genotypes <- hapmap$genotypes[,hapmap$map$snp.name]
 ```
 
-
-
 ## Explore correlated dataset (just hapmap itself!)
 
 Get info about correlated dataset:
@@ -107,7 +105,6 @@ for (i in 1:165){
     a <- a+1
   }
 }
-
 
 uncor_geno <- hapmap$genotypes[related.index]  #genotype information
 uncor_fam <- hapmap$fam[rownames(hapmap$fam) %in% unrelated, ] #family information
@@ -158,12 +155,6 @@ map <- map %>%
 
 ## Run LM - corr, SNP-related model
 
-One useful piece of information about these SNPs that the `map` data frame does not already contain is the minor allele frequency (MAF) --- that is, the frequency of the minor allele in this dataset. Thankfully, the `snpstats` package provides some helpful code for quickly calculating the MAF for each SNP in the dataset:
-
-```{r calculate-MAF}
-maf <- col.summary(hapmap$genotypes)$MAF
-head(maf)
-```
 
 Notice that some of these SNPs have a MAF of zero! This means that everyone in the dataset has the same genotype at these positions. We refer to these SNPs as *monomorphic* (mono meaning "one").
 
