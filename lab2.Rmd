@@ -72,6 +72,15 @@ unrelated <- partition$unrels
 -   `fam` contains information on each individual
 -   `map` contains information on each SNP
 
+
+## Remove monomorphic from map
+```{r remove-mono-from-map}
+maf <- col.summary(hapmap$genotypes)$MAF
+hapmap$map <- hapmap$map %>%
+  mutate(MAF = maf) %>% filter(MAF > 0)
+# nrow(hapmap$map)  1283751 left
+```
+
 ## Explore correlated dataset (just hapmap itself!)
 
 Get info about correlated dataset:
@@ -79,7 +88,7 @@ Get info about correlated dataset:
 ```{r explore-correlated_dataset}
 cor_geno <- hapmap$genotypes  # genotype information
 cor_fam <- hapmap$fam    #family information
-map <- hapmap$map    #SNPs information (can be used for both correalated and uncorrelated data set)
+map <- hapmap$map    #SNPs information (can be used for both correlated and uncorrelated data set)
 ```
 
 ## Explore uncorrelated dataset (subsetting from the hapmap)
@@ -101,8 +110,8 @@ uncor_fam <- hapmap$fam[rownames(hapmap$fam) %in% unrelated, ] #family informati
 ```
 
 
-
 ## Shrinking SNP number
+
 
 ## Simulate trait
 
