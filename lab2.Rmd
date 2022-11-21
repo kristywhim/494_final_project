@@ -76,10 +76,11 @@ unrelated <- partition$unrels
 ## Remove monomorphic from map and genotype
 ```{r remove-mono-from-map}
 maf <- col.summary(hapmap$genotypes)$MAF
+calls <- col.summary(hapmap$genotypes)$Call.rate
 
 hapmap$map <- hapmap$map %>%
-  mutate(MAF = maf) %>% filter(MAF > 0)
-# nrow(hapmap$map)  1283751 left
+  mutate(MAF = maf) %>% filter(MAF > 0) %>% filter(calls == 1)
+# nrow(hapmap$map)  949972 left
 
 hapmap$genotypes <- hapmap$genotypes[,hapmap$map$snp.name]
 ```
@@ -111,19 +112,6 @@ uncor_geno <- hapmap$genotypes[related.index]  #genotype information
 uncor_fam <- hapmap$fam[rownames(hapmap$fam) %in% unrelated, ] #family information
 ```
 
-## Format genodata for LM + PCA
-```{r format geno data}
-# corr
-cor.geno <- as(cor_geno, "numeric")
-# nrow(cor.geno)
-# ncol(cor.geno)  this is 165*1283571
-
-# uncorr
-uncor.geno <- as(uncor_geno, "numeric")
-# nrow(uncor.geno)
-# ncol(uncor.geno) this is 107*1283571
-```
-
 ## Shrinking SNP number
 ```{r select first 500 snps}
 ## correlated
@@ -136,10 +124,35 @@ map <- map %>%
   filter(snp.name %in% colnames(cor_geno))
 ```
 
+## Format genodata for LM + PCA
+```{r format geno data}
+# corr
+cor.geno <- as(cor_geno, "numeric")
+# nrow(cor.geno)
+# ncol(cor.geno)  this is 165*500
+
+# uncorr
+uncor.geno <- as(uncor_geno, "numeric")
+# nrow(uncor.geno)
+# ncol(uncor.geno) this is 107*500
+```
+
+
 ## Simulate trait
 ```{r}
+set.seed(494)
 
+# null y:corr
+y_cor_null <- rnorm(165, mean = 50, sd = 2)
 
+# null y: uncorr
+y_uncor_null <- rnorm(107, mean = 50, sd = 2)
+
+# associative y: corr (based on "rs3766191" and "rs2985855")
+y_cor_asso <- cor.geno[,"rs3766191"]*2 + cor.geno[,"rs2985855"] * 2 + rnorm(165, mean = 50, sd = 2)
+
+# associative y: uncorr
+y_uncor_asso <- uncor.geno[,"rs3766191"]*2 + uncor.geno[,"rs2985855"] * 2 + rnorm(107, mean = 50, sd = 2)
 ```
 
 
