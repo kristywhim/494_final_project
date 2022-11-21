@@ -115,15 +115,18 @@ uncor_fam <- hapmap$fam[rownames(hapmap$fam) %in% unrelated, ] #family informati
 
 ## Format genodata for LM + PCA
 ```{r format geno data}
-geno <- as(uncor_geno, "numeric")
-uncor_geno <- which(maf != 0) 
-monomorphic <- which(maf == 0) 
-geno.clean <- geno[,-monomorphic]
+monomorphic <- which(maf == 0)
+# uncorr
+uncor.geno <- as(uncor_geno, "numeric")
+uncor.geno <- uncor.geno[,-monomorphic]
 
+# corr
+cor.geno <- as(cor_geno, "numeric")
+cor.geno <- uncor.geno[,-monomorphic]
 ```
 
 ## Shrinking SNP number
-```{r}
+```{r select first 500 snps}
 ## correlated
 cor_geno <- cor_geno[,1:500]
 
