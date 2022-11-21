@@ -1,6 +1,6 @@
 ---
-title: 'Lab 2: implementing marginal regression'
-author: "Prof. Kelsey Grinde"
+title: '494 final project'
+author: "Kristy Ma, Rita Li"
 date: "`r Sys.Date()`"
 output: html_document
 ---
@@ -9,86 +9,117 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE, error = TRUE)
 ```
 
-## Install and Load Packages
-
-Run the following code in the Console to install a new package called `snpstats` that we'll be using today:
+# Install and Load Packages
 
     if (!require("BiocManager", quietly = TRUE))
         install.packages("BiocManager")
     BiocManager::install("snpStats")
-
-Now, load this package along with a few others that will be helpful for our analysis. (You may need to install some of these other packages as well, especially if you've updated your version of R/RStudio since you took STAT 155.)
 
 ```{r load-packages, message = F}
 library(snpStats)
 library(dplyr)
 library(ggplot2)
 library(broom)
+library(SNPRelate)
+library(GENESIS)
+library(GWASTools)
 ```
 
-## Load Data
+# Data preparation
 
-To download the data that we'll be using today, go to [this GitHub page](https://github.com/MareesAT/GWA_tutorial/) and download the `1_QC_GWAS.zip` file. Once you've downloaded that file successfully, you'll need to unzip it. On most computers, double-clicking the zipped file will unzip it, but you can also do it from the command line if that doesn't work. (Kelsey can help with this --- just raise your hand if you get stuck here!)
+## load data
 
-Once you've finished downloading the data, update the strings below to reflect the correct path to the data on your computer. Here's what it looks like for me (you'll need to update this):
-
-```{r file-paths}
+```{r read data, cache=TRUE}
 fam <- './1_QC_GWAS/HapMap_3_r3_1.fam'
 bim <- './1_QC_GWAS/HapMap_3_r3_1.bim'
 bed <- './1_QC_GWAS/HapMap_3_r3_1.bed'
-```
 
-Now, we can use the `read.plink` function in the `snpstats` package to read this data into R. (It might take a minute.)
-
-```{r read-data, cache=TRUE}
 hapmap <- read.plink(bed, bim, fam)
+names(hapmap)
+
+
+snpgdsBED2GDS(bed, fam, bim, "lab2.gds")
+
+# open
+genofile <- snpgdsOpen("lab2.gds")
+genofile
+# close
+snpgdsClose(genofile)
 ```
 
-## Explore Data
+## Separate two sets: get uncorr, corr names
 
-The new `hapmap` data object is a list of three items:
+```{r use lab2.gds to do king robust estimation}
+genofile <- snpgdsOpen("lab2.gds")
+Kingoutput <- snpgdsIBDKING(genofile)
+king.matrix <- Kingoutput$kinship
 
-```{r explore-data}
-names(hapmap)
+
+sample.id <- Kingoutput$sample.id
+
+colnames(king.matrix) <- sample.id
+
+partition <- pcairPartition(kinobj = king.matrix ,divobj = king.matrix, )
+
+# 58 individuals
+related <- partition$rels
+
+# 107 uncorrelated individuals
+unrelated <- partition$unrels
 ```
 
 -   `genotypes` contains the genotype data
 -   `fam` contains information on each individual
 -   `map` contains information on each SNP
 
-### Explore genotype data
+## Explore correlated dataset (just hapmap itself!)
 
-Get info about the genotype data:
+Get info about correlated dataset:
 
-```{r explore-genotype-matrix}
-hapmap$genotypes
+```{r explore-correlated_dataset}
+cor_geno <- hapmap$genotypes  # genotype information
+cor_fam <- hapmap$fam    #family information
+map <- hapmap$map    #SNPs information (can be used for both correalated and uncorrelated data set)
 ```
 
-How many individuals do we have in this dataset? How many SNPs?
+## Explore uncorrelated dataset (subsetting from the hapmap)
 
-> 165 individuals, and 11457897 snps
+```{r explore-uncorrelated-dataset}
+related.index <- c()
+a <- 0
 
-### Explore sample information
+for (i in 1:165){
+  if (rownames(hapmap$genotypes[i,])%in%unrelated){
+    related.index[a] <- i
+    a <- a+1
+  }
+}
 
-Look at the info we have on each individual:
-
-```{r explore-sample-info}
-head(hapmap$fam,20)
+#uncor geno is weird-- only 106 individuals
+uncor_geno <- hapmap$genotypes[related.index]  #genotype information
+uncor_fam <- hapmap$fam[rownames(hapmap$fam) %in% unrelated, ] #family information
 ```
 
-We'll ignore this information for now.
 
-### Explore SNP information
 
-We can also look at the info we have on each SNP:
+## Shrinking SNP number
 
-```{r explore-snp-info}
-head(hapmap$map)
-```
+## Simulate trait
 
-What do you think each of these columns are telling us? Discuss with your group.
 
-> for example, in the first row it is has a snp id (snp.name) and it is on chromosome 1. It has two versions of alleles prevalent: T or C.
+# Run LM model
+
+## Run LM - uncorr, null model
+
+## Run LM - uncorr, SNP-related model
+
+
+
+# Run LMM model
+
+## Run LM - corr, null model
+
+## Run LM - corr, SNP-related model
 
 One useful piece of information about these SNPs that the `map` data frame does not already contain is the minor allele frequency (MAF) --- that is, the frequency of the minor allele in this dataset. Thankfully, the `snpstats` package provides some helpful code for quickly calculating the MAF for each SNP in the dataset:
 
