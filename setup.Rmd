@@ -79,8 +79,8 @@ maf <- col.summary(hapmap$genotypes)$MAF
 calls <- col.summary(hapmap$genotypes)$Call.rate
 
 hapmap$map <- hapmap$map %>%
-  mutate(MAF = maf) %>% filter(MAF > 0) %>% filter(calls == 1)
-# nrow(hapmap$map)  949972 left
+  mutate(MAF = maf) %>% filter(MAF > 0 & calls == 1)
+# nrow(hapmap$map) 949972
 
 hapmap$genotypes <- hapmap$genotypes[,hapmap$map$snp.name]
 ```
@@ -155,55 +155,67 @@ y_cor_asso <- cor.geno[,"rs3766191"]*2 + cor.geno[,"rs2985855"] * 2 + rnorm(165,
 y_uncor_asso <- uncor.geno[,"rs3766191"]*2 + uncor.geno[,"rs2985855"] * 2 + rnorm(107, mean = 50, sd = 2)
 ```
 
-### write plink
-```{r}
-# cor
-write.plink(file.base="LMM", 
+### write plink for LMM (GENESIS)
+```{r write plink}
+## cor null
+write.plink(file.base="cor_null", 
             snps=cor_geno,
             subject.data=cor_fam, 
             phenotype = as.numeric(y_cor_null), 
             sex = as.numeric(cor_fam$sex),
             snp.major=FALSE)
 
-fam <- 'LMM.fam'
-bim <- 'LMM.bim'
-bed <- 'LMM.bed'
+fam <- 'cor_null.fam'
+bim <- 'cor_null.bim'
+bed <- 'cor_null.bed'
 
 snpgdsBED2GDS(bed, fam, bim, "cor_null.gds")
 
-# open
-genofile <- snpgdsOpen("cor_null.gds")
-genofile
-# close
-snpgdsClose(genofile)
+## cor asso
+write.plink(file.base="cor_asso", 
+            snps=cor_geno,
+            subject.data=cor_fam, 
+            phenotype = as.numeric(y_cor_asso), 
+            sex = as.numeric(cor_fam$sex),
+            snp.major=FALSE)
+
+fam <- 'cor_asso.fam'
+bim <- 'cor_asso.bim'
+bed <- 'cor_asso.bed'
+
+snpgdsBED2GDS(bed, fam, bim, "cor_asso.gds")
+
+## uncor null
+write.plink(file.base="uncor_null", 
+            snps=uncor_geno,
+            subject.data=uncor_fam, 
+            phenotype = as.numeric(y_uncor_null), 
+            sex = as.numeric(uncor_fam$sex),
+            snp.major=FALSE)
+
+fam <- 'uncor_null.fam'
+bim <- 'uncor_null.bim'
+bed <- 'uncor_null.bed'
+
+snpgdsBED2GDS(bed, fam, bim, "uncor_null.gds")
+
+## uncor asso
+write.plink(file.base="uncor_asso", 
+            snps=uncor_geno,
+            subject.data=uncor_fam, 
+            phenotype = as.numeric(y_uncor_asso), 
+            sex = as.numeric(uncor_fam$sex),
+            snp.major=FALSE)
+
+fam <- 'uncor_asso.fam'
+bim <- 'uncor_asso.bim'
+bed <- 'uncor_asso.bed'
+
+snpgdsBED2GDS(bed, fam, bim, "uncor_asso.gds")
 ```
-# Run LM model
-
-## Run LM - uncorr, null model
-
-## Run LM - uncorr, SNP-related model
 
 
 
-# Run LMM model
-
-## Run LM - corr, null model
-
-## Run LM - corr, SNP-related model
-
-
-Notice that some of these SNPs have a MAF of zero! This means that everyone in the dataset has the same genotype at these positions. We refer to these SNPs as *monomorphic* (mono meaning "one").
-
-Let's add the minor allele frequencies to our `map` data frame. (This will come in handy later.)
-
-```{r add-MAF-to-SNP-info}
-# add new MAF variable 
-hapmap$map <- hapmap$map %>%
-  mutate(MAF = maf)
-
-# look at SNP info again
-head(hapmap$map)
-```
 
 ## Reformat data for analysis
 
@@ -212,16 +224,6 @@ The `snpstats` package uses a unique format to store data. Currently, genotypes 
 ```{r look-at-genotypes}
 # look at first five rows/columns
 hapmap$genotypes@.Data[1:5,1:5]
-```
-
-Let's convert this to the 0, 1, 2 (and NA) format that we've talked about in class:
-
-```{r reformat-genotypes}
-# convert from "SnpMatrix" to "numeric"
-X <- as(hapmap$genotypes, "numeric")
-
-# look at first five rows/columns to confirm conversion looks ok
-X[1:5, 1:5]
 ```
 
 If the conversion was successful, you should now see a matrix of 0's, 1's, and 2's.

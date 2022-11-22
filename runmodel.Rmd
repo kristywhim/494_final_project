@@ -1,0 +1,51 @@
+---
+title: '494 final project'
+author: "Kristy Ma, Rita Li"
+date: "`r Sys.Date()`"
+output: html_document
+---
+```{r load-packages, message = F}
+library(snpStats)
+library(dplyr)
+library(ggplot2)
+library(broom)
+library(SNPRelate)
+library(GENESIS)
+library(GWASTools)
+```
+
+```{r open gds,cache=TRUE}
+uncor_null <- snpgdsOpen("./plinklmm/uncor_null.gds")
+uncor_asso <- snpgdsOpen("./plinklmm/uncor_asso.gds")
+cor_null <- snpgdsOpen("./plinklmm/cor_null.gds")
+cor_asso <- snpgdsOpen("./plinklmm/cor_asso.gds")
+```
+
+
+# Run model on correlated data
+
+## uncorr, null
+
+### LM
+### LMM
+
+
+## uncorr, SNP-related model (associative model)
+
+### LM
+### LMM
+
+
+
+
+# Run models on correlated data
+
+## corr, null model
+
+### LM
+### LMM
+
+## corr, SNP-related model (associative model)
+
+### LM
+### LMM
