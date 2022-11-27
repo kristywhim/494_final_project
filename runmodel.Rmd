@@ -15,19 +15,35 @@ library(GWASTools)
 ```
 
 ```{r open gds,cache=TRUE}
-uncor_null <- snpgdsOpen("./plinklmm/uncor_null.gds")
-uncor_asso <- snpgdsOpen("./plinklmm/uncor_asso.gds")
-cor_null <- snpgdsOpen("./plinklmm/cor_null.gds")
-cor_asso <- snpgdsOpen("./plinklmm/cor_asso.gds")
+# uncor_null <- snpgdsOpen("./plinklmm/uncor_null.gds")  #1
+# uncor_asso <- snpgdsOpen("./plinklmm/uncor_asso.gds")  #2
+# cor_null <- snpgdsOpen("./plinklmm/cor_null.gds")      #3
+# cor_asso <- snpgdsOpen("./plinklmm/cor_asso.gds")      #4
 ```
 
+This document is used to run models for four dataset. For uncor dataset, there are 107 people; For cor dataset, there are 165 people. And there are 500 snps to do GWAS.
 
-# Run model on correlated data
+# Run model on uncorrelated data
 
 ## uncorr, null
 
 ### LM
+
 ### LMM
+
+```{r}
+# Step1: read in
+geno1 <- GdsGenotypeReader(filename = "./plinklmm/uncor_null.gds")
+geno1 <- GenotypeData(geno1)
+
+
+# Step2: King matrix
+file <- snpgdsOpen(geno1)
+KINGmat1 <- snpgdsIBDKING(file)
+
+# Step3: pc air
+mypcair <- pcair(geno1, kinobj = KINGmat1, divobj = KINGmat1)
+```
 
 
 ## uncorr, SNP-related model (associative model)
