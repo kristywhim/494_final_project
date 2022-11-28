@@ -358,10 +358,6 @@ result4 %>%
 
 ### LMM
 
-
-
-
-
 ```{r corr-asso-LMM}
 # Step1: read in
 geno4 <- GdsGenotypeReader(filename = "./plinklmm/cor_asso.gds")
