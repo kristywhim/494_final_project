@@ -58,6 +58,7 @@ king.matrix <- Kingoutput$kinship
 sample.id <- Kingoutput$sample.id
 
 colnames(king.matrix) <- sample.id
+rownames(king.matrix) <- sample.id
 
 partition <- pcairPartition(kinobj = king.matrix ,divobj = king.matrix, )
 
@@ -157,9 +158,13 @@ y_uncor_asso <- uncor.geno[,"rs3766191"]*2 + uncor.geno[,"rs2985855"] * 2 + rnor
 
 ### write plink for LMM (GENESIS)
 ```{r write plink}
+# snp.ids = colnames(cor_geno)
+# cor_geno_int <- substr(snp.ids, start = 3, stop = nchar(snp.ids))
+# cor_geno_gds <- cor_geno
+# colnames(cor_geno_gds) <- cor_geno_int
 ## cor null
 write.plink(file.base="cor_null", 
-            snps=cor_geno,
+            snps= cor_geno,
             subject.data=cor_fam, 
             phenotype = as.numeric(y_cor_null), 
             sex = as.numeric(cor_fam$sex),

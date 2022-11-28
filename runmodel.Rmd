@@ -49,14 +49,14 @@ for(i in 1:500){
   pvals[i] <- coefinfo$p.value[2]
 }
 
-result <- colnames(uncor.geno) %>% 
+result1 <- colnames(uncor.geno) %>% 
   as.data.frame() %>% mutate(Estimate = betas,
          Std.Error = ses,
          Test.Statistic = tstats,
          P.Value = pvals)
 
 # Manhattan
-result %>%
+result1 %>%
   mutate(minuslogp = -log10(P.Value),
          snp.id = result$.,
          position = seq(500)) %>%
@@ -73,13 +73,48 @@ result %>%
 geno1 <- GdsGenotypeReader(filename = "./plinklmm/uncor_null.gds")
 geno1 <- GenotypeData(geno1)
 
-
+snpgdsClose(geno1)
 # Step2: King matrix
-file <- snpgdsOpen("uncor_null.gds")
-KINGmat1 <- snpgdsIBDKING(file)
+file <- snpgdsOpen("./plinklmm/uncor_null.gds", allow.duplicate = TRUE)
+uncor_king <- king.matrix[unrelated,unrelated]
 
 # Step3: pc air
-mypcair <- pcair(geno1, kinobj = KINGmat1, divobj = KINGmat1)
+mypcair <- pcair(geno1, kinobj = uncor_king, divobj = uncor_king, snp.include = getSnpID(geno1),autosome.only=FALSE)
+```
+```{r}
+# step 4 pc relate
+hapmap_geno1 <- GenotypeBlockIterator(geno1, snpInclude=getSnpID(geno1))
+mypcrelate1 <- pcrelate(hapmap_geno1, pcs = mypcair$vectors[,1:2], 
+                       training.set = unrelated,
+                       BPPARAM = BiocParallel::SerialParam())
+
+# step 5 read in GRM
+myGRM1 <- pcrelateToMatrix(mypcrelate1)
+myGRM1[1:5,1:5]
+
+# step 6 scanAnnot
+
+mydat <- data.frame(scanID = mypcair$sample.id, 
+                    pc1 = mypcair$vectors[,1],
+                    pheno = y_uncor_null)
+head(mydat)
+
+scanAnnot <- ScanAnnotationDataFrame(mydat)
+
+# step 7 fit null model
+nullmod1 <- fitNullModel(scanAnnot, outcome = "pheno", 
+                         covars = NULL,
+                        cov.mat = myGRM1, family = "gaussian")
+
+# step 5 run snp association test(LMM marginal regression)
+genoIterator <- GenotypeBlockIterator(hapmap_geno1, snpBlock=500)
+
+assoc1 <- assocTestSingle(genoIterator, null.model = nullmod1,
+                         BPPARAM = BiocParallel::SerialParam())
+
+manhattanPlot(result1$P.Value, rep(1,500), ylim = c(0, 7), trunc.lines = FALSE, signif = 1e-4, thinThreshold=NULL, pointsPerBin=10000, col=NULL)   
+
+manhattanPlot(assoc1$Score.pval, rep(1,500), ylim = c(0, 7), trunc.lines = FALSE, signif = 1e-4, thinThreshold=NULL, pointsPerBin=10000, col=NULL) 
 ```
 
 
@@ -107,14 +142,14 @@ for(i in 1:500){
   pvals[i] <- coefinfo$p.value[2]
 }
 
-result <- colnames(uncor.geno) %>% 
+result2 <- colnames(uncor.geno) %>% 
   as.data.frame() %>% mutate(Estimate = betas,
          Std.Error = ses,
          Test.Statistic = tstats,
          P.Value = pvals)
 
 # Manhattan
-result %>%
+result2 %>%
   mutate(minuslogp = -log10(P.Value),
          snp.id = result$.,
          position = seq(500)) %>%
@@ -125,6 +160,55 @@ result %>%
 ```
 
 ### LMM
+
+```{r uncorr-asso-LMM}
+# Step1: read in
+geno2 <- GdsGenotypeReader(filename = "./plinklmm/uncor_asso.gds")
+geno2 <- GenotypeData(geno2)
+
+
+# Step2: King matrix
+# same with previous one
+
+# Step3: pc air
+mypcair <- pcair(geno2, kinobj = uncor_king, divobj = uncor_king, snp.include = getSnpID(geno2),autosome.only=FALSE)
+```
+```{r}
+# step 4 pc relate
+hapmap_geno2 <- GenotypeBlockIterator(geno2, snpInclude=getSnpID(geno2))
+mypcrelate2 <- pcrelate(hapmap_geno2, pcs = mypcair$vectors[,1:2], 
+                       training.set = unrelated,
+                       BPPARAM = BiocParallel::SerialParam())
+
+# step 5 read in GRM
+myGRM2 <- pcrelateToMatrix(mypcrelate2)
+myGRM2[1:5,1:5]
+
+# step 6 scanAnnot
+
+mydat2 <- data.frame(scanID = mypcair$sample.id, 
+                    pc1 = mypcair$vectors[,1],
+                    pheno = y_uncor_asso)
+head(mydat2)
+
+scanAnnot2 <- ScanAnnotationDataFrame(mydat2)
+
+# step 7 fit null model
+nullmod2 <- fitNullModel(scanAnnot2, outcome = "pheno", 
+                         covars = NULL,
+                        cov.mat = myGRM2, family = "gaussian")
+
+# step 5 run snp association test(LMM marginal regression)
+genoIterator <- GenotypeBlockIterator(hapmap_geno2, snpBlock=500)
+
+assoc2 <- assocTestSingle(genoIterator, null.model = nullmod2,
+                         BPPARAM = BiocParallel::SerialParam())
+
+manhattanPlot(result$P.Value, rep(1,500), ylim = c(0, 7), trunc.lines = FALSE, signif = 1e-4, thinThreshold=NULL, pointsPerBin=10000, col=NULL)   
+
+manhattanPlot(assoc2$Score.pval, rep(1,500), ylim = c(0, 7), trunc.lines = FALSE, signif = 1e-4, thinThreshold=NULL, pointsPerBin=10000, col=NULL)   
+```
+
 
 
 
@@ -156,14 +240,14 @@ for(i in 1:500){
   pvals[i] <- coefinfo$p.value[2]
 }
 
-result <- colnames(cor.geno) %>% 
+result3 <- colnames(cor.geno) %>% 
   as.data.frame() %>% mutate(Estimate = betas,
          Std.Error = ses,
          Test.Statistic = tstats,
          P.Value = pvals)
 
 # Manhattan
-result %>%
+result3 %>%
   mutate(minuslogp = -log10(P.Value),
          snp.id = result$.,
          position = seq(500)) %>%
@@ -174,6 +258,62 @@ result %>%
 ```
 
 ### LMM
+
+
+
+```{r corr-NULL-LMM}
+# Step1: read in
+geno3 <- GdsGenotypeReader(filename = "./plinklmm/cor_null.gds")
+geno3 <- GenotypeData(geno3)
+
+
+# Step2: King matrix
+king <- king.matrix
+
+# Step3: pc air
+mypcair <- pcair(geno3, kinobj = king, divobj = king, snp.include = getSnpID(geno3),autosome.only=FALSE)
+```
+```{r}
+# step 4 pc relate
+hapmap_geno3 <- GenotypeBlockIterator(geno3, snpInclude=getSnpID(geno3))
+mypcrelate3 <- pcrelate(hapmap_geno3, 
+                        pcs = mypcair$vectors[,1:2], 
+                       training.set = unrelated,
+                       BPPARAM = BiocParallel::SerialParam())
+
+# step 5 read in GRM
+myGRM3 <- pcrelateToMatrix(mypcrelate3)
+myGRM3[1:5,1:5]
+
+# step 6 scanAnnot
+
+mydat3 <- data.frame(scanID = mypcair$sample.id, 
+                    pc1 = mypcair$vectors[,1],
+                    pheno = y_cor_null)
+head(mydat3)
+
+scanAnnot3 <- ScanAnnotationDataFrame(mydat3)
+
+# step 7 fit null model
+nullmod3 <- fitNullModel(scanAnnot3, outcome = "pheno", 
+                         covars = NULL,
+                        cov.mat = myGRM3, family = "gaussian")
+
+# step 5 run snp association test(LMM marginal regression)
+genoIterator <- GenotypeBlockIterator(hapmap_geno3, snpBlock=500)
+
+assoc3 <- assocTestSingle(genoIterator, null.model = nullmod3,
+                         BPPARAM = BiocParallel::SerialParam())
+
+manhattanPlot(result3$P.Value, rep(1,500), ylim = c(0, 7), trunc.lines = FALSE, signif = 1e-4, thinThreshold=NULL, pointsPerBin=10000, col=NULL)   
+
+manhattanPlot(assoc3$Score.pval, rep(1,500), ylim = c(0, 7), trunc.lines = FALSE, signif = 1e-4, thinThreshold=NULL, pointsPerBin=10000, col=NULL)   
+```
+
+
+
+
+
 
 ## corr, SNP-related model (associative model)
 
@@ -199,14 +339,14 @@ for(i in 1:500){
   pvals[i] <- coefinfo$p.value[2]
 }
 
-result <- colnames(cor.geno) %>% 
+result4 <- colnames(cor.geno) %>% 
   as.data.frame() %>% mutate(Estimate = betas,
          Std.Error = ses,
          Test.Statistic = tstats,
          P.Value = pvals)
 
 # Manhattan
-result %>%
+result4 %>%
   mutate(minuslogp = -log10(P.Value),
          snp.id = result$.,
          position = seq(500)) %>%
@@ -217,3 +357,61 @@ result %>%
 ```
 
 ### LMM
+
+
+
+
+
+```{r corr-asso-LMM}
+# Step1: read in
+geno4 <- GdsGenotypeReader(filename = "./plinklmm/cor_asso.gds")
+geno4 <- GenotypeData(geno4)
+
+
+# Step2: King matrix
+king <- king.matrix
+
+# Step3: pc air
+mypcair <- pcair(geno4, kinobj = king, divobj = king, snp.include = getSnpID(geno4),autosome.only=FALSE)
+```
+```{r}
+# step 4 pc relate
+hapmap_geno4 <- GenotypeBlockIterator(geno4, snpInclude=getSnpID(geno4))
+mypcrelate4 <- pcrelate(hapmap_geno4, 
+                        pcs = mypcair$vectors[,1:2], 
+                       training.set = unrelated,
+                       BPPARAM = BiocParallel::SerialParam())
+
+# step 5 read in GRM
+myGRM4 <- pcrelateToMatrix(mypcrelate4)
+myGRM4[1:5,1:5]
+
+# step 6 scanAnnot
+
+mydat4 <- data.frame(scanID = mypcair$sample.id, 
+                    pc1 = mypcair$vectors[,1],
+                    pheno = y_cor_asso)
+head(mydat4)
+
+scanAnnot4 <- ScanAnnotationDataFrame(mydat4)
+
+# step 7 fit null model
+nullmod4 <- fitNullModel(scanAnnot4, outcome = "pheno", 
+                         covars = NULL,
+                        cov.mat = myGRM4, family = "gaussian")
+
+# step 5 run snp association test(LMM marginal regression)
+genoIterator <- GenotypeBlockIterator(hapmap_geno4, snpBlock=500)
+
+assoc4 <- assocTestSingle(genoIterator, null.model = nullmod4,
+                         BPPARAM = BiocParallel::SerialParam())
+
+manhattanPlot(result4$P.Value, rep(1,500), ylim = c(0, 7), trunc.lines = FALSE, signif = 1e-4, thinThreshold=NULL, pointsPerBin=10000, col=NULL)   
+
+manhattanPlot(assoc4$Score.pval, rep(1,500), ylim = c(0, 7), trunc.lines = FALSE, signif = 1e-4, thinThreshold=NULL, pointsPerBin=10000, col=NULL)   
+```
+
+
+
+
+
