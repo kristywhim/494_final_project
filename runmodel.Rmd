@@ -397,7 +397,7 @@ scanAnnot4 <- ScanAnnotationDataFrame(mydat4)
 
 # step 7 fit null model
 nullmod4 <- fitNullModel(scanAnnot4, outcome = "pheno", 
-                         covars = NULL,
+                         covars = "pc1",
                         cov.mat = myGRM4, family = "gaussian")
 
 # step 5 run snp association test(LMM marginal regression)
@@ -411,6 +411,30 @@ manhattanPlot(result4$P.Value, rep(1,500), ylim = c(0, 7), trunc.lines = FALSE, 
 manhattanPlot(assoc4$Score.pval, rep(1,500), ylim = c(0, 7), trunc.lines = FALSE, signif = 1e-4, thinThreshold=NULL, pointsPerBin=10000, col=NULL)   
 ```
 
+# View qqplot
+```{r}
+qqPlot(assoc1$Score.pval, truncate = TRUE)
+
+qqPlot(result1$P.Value, truncate = TRUE)
+```
+
+```{r}
+qqPlot(assoc2$Score.pval, truncate = TRUE)
+
+qqPlot(result2$P.Value, truncate = TRUE)
+```
+
+```{r}
+qqPlot(assoc3$Score.pval, truncate = TRUE)
+
+qqPlot(result3$P.Value, truncate = TRUE)
+```
+
+```{r}
+qqPlot(assoc4$Score.pval, truncate = TRUE)
+
+qqPlot(result4$P.Value, truncate = TRUE)
+```
 
 
 
