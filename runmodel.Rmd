@@ -28,17 +28,54 @@ This document is used to run models for four dataset. For uncor dataset, there a
 ## uncorr, null
 
 ### LM
+```{r uncorr-null-LM}
+betas <- c()
+ses <- c()
+tstats <- c()
+pvals <- c()
+
+# loop through chromosome 1 SNPs
+for(i in 1:500){
+  # print out occasional updates telling us what SNP we're analyzing
+  if(i %% 100 == 0) print(paste('Analyzing SNP', i)) 
+  # fit model
+  mod <- lm(y_uncor_null ~ uncor.geno[,i])
+  # get coefficient information
+  coefinfo <- tidy(mod)
+  # record estimate, SE, test stat, and p-value
+  betas[i] <- coefinfo$estimate[2]
+  ses[i] <- coefinfo$std.error[2]
+  tstats[i] <- coefinfo$statistic[2]
+  pvals[i] <- coefinfo$p.value[2]
+}
+
+result <- colnames(uncor.geno) %>% 
+  as.data.frame() %>% mutate(Estimate = betas,
+         Std.Error = ses,
+         Test.Statistic = tstats,
+         P.Value = pvals)
+
+# Manhattan
+result %>%
+  mutate(minuslogp = -log10(P.Value),
+         snp.id = result$.,
+         position = seq(500)) %>%
+  ggplot(aes(x = position, y = minuslogp)) + 
+  geom_point() + 
+  labs(x = 'SNP ID', y = expression(paste('-log'[10],'(p-value)'))) + 
+  scale_x_continuous(labels = scales::comma)
+```
 
 ### LMM
 
-```{r}
+```{r uncorr-null-LMM}
 # Step1: read in
 geno1 <- GdsGenotypeReader(filename = "./plinklmm/uncor_null.gds")
 geno1 <- GenotypeData(geno1)
 
 
 # Step2: King matrix
-file <- snpgdsOpen(geno1)
+file <- snpgdsOpen("uncor_null.gds")
 KINGmat1 <- snpgdsIBDKING(file)
 
 # Step3: pc air
@@ -49,6 +86,44 @@ mypcair <- pcair(geno1, kinobj = KINGmat1, divobj = KINGmat1)
 ## uncorr, SNP-related model (associative model)
 
 ### LM
+```{r uncorr-asso-LM}
+betas <- c()
+ses <- c()
+tstats <- c()
+pvals <- c()
+
+# loop through chromosome 1 SNPs
+for(i in 1:500){
+  # print out occasional updates telling us what SNP we're analyzing
+  if(i %% 100 == 0) print(paste('Analyzing SNP', i)) 
+  # fit model
+  mod <- lm(y_uncor_asso ~ uncor.geno[,i])
+  # get coefficient information
+  coefinfo <- tidy(mod)
+  # record estimate, SE, test stat, and p-value
+  betas[i] <- coefinfo$estimate[2]
+  ses[i] <- coefinfo$std.error[2]
+  tstats[i] <- coefinfo$statistic[2]
+  pvals[i] <- coefinfo$p.value[2]
+}
+
+result <- colnames(uncor.geno) %>% 
+  as.data.frame() %>% mutate(Estimate = betas,
+         Std.Error = ses,
+         Test.Statistic = tstats,
+         P.Value = pvals)
+
+# Manhattan
+result %>%
+  mutate(minuslogp = -log10(P.Value),
+         snp.id = result$.,
+         position = seq(500)) %>%
+  ggplot(aes(x = position, y = minuslogp)) + 
+  geom_point() + 
+  labs(x = 'SNP ID', y = expression(paste('-log'[10],'(p-value)'))) + 
+  scale_x_continuous(labels = scales::comma)
+```
+
 ### LMM
 
 
@@ -59,9 +134,86 @@ mypcair <- pcair(geno1, kinobj = KINGmat1, divobj = KINGmat1)
 ## corr, null model
 
 ### LM
+
+```{r corr-null-LM}
+betas <- c()
+ses <- c()
+tstats <- c()
+pvals <- c()
+
+# loop through chromosome 1 SNPs
+for(i in 1:500){
+  # print out occasional updates telling us what SNP we're analyzing
+  if(i %% 100 == 0) print(paste('Analyzing SNP', i)) 
+  # fit model
+  mod <- lm(y_cor_null ~ cor.geno[,i])
+  # get coefficient information
+  coefinfo <- tidy(mod)
+  # record estimate, SE, test stat, and p-value
+  betas[i] <- coefinfo$estimate[2]
+  ses[i] <- coefinfo$std.error[2]
+  tstats[i] <- coefinfo$statistic[2]
+  pvals[i] <- coefinfo$p.value[2]
+}
+
+result <- colnames(cor.geno) %>% 
+  as.data.frame() %>% mutate(Estimate = betas,
+         Std.Error = ses,
+         Test.Statistic = tstats,
+         P.Value = pvals)
+
+# Manhattan
+result %>%
+  mutate(minuslogp = -log10(P.Value),
+         snp.id = result$.,
+         position = seq(500)) %>%
+  ggplot(aes(x = position, y = minuslogp)) + 
+  geom_point() + 
+  labs(x = 'SNP ID', y = expression(paste('-log'[10],'(p-value)'))) + 
+  scale_x_continuous(labels = scales::comma)
+```
+
 ### LMM
 
 ## corr, SNP-related model (associative model)
 
 ### LM
+```{r}
+betas <- c()
+ses <- c()
+tstats <- c()
+pvals <- c()
+
+# loop through chromosome 1 SNPs
+for(i in 1:500){
+  # print out occasional updates telling us what SNP we're analyzing
+  if(i %% 100 == 0) print(paste('Analyzing SNP', i)) 
+  # fit model
+  mod <- lm(y_cor_asso ~ cor.geno[,i])
+  # get coefficient information
+  coefinfo <- tidy(mod)
+  # record estimate, SE, test stat, and p-value
+  betas[i] <- coefinfo$estimate[2]
+  ses[i] <- coefinfo$std.error[2]
+  tstats[i] <- coefinfo$statistic[2]
+  pvals[i] <- coefinfo$p.value[2]
+}
+
+result <- colnames(cor.geno) %>% 
+  as.data.frame() %>% mutate(Estimate = betas,
+         Std.Error = ses,
+         Test.Statistic = tstats,
+         P.Value = pvals)
+
+# Manhattan
+result %>%
+  mutate(minuslogp = -log10(P.Value),
+         snp.id = result$.,
+         position = seq(500)) %>%
+  ggplot(aes(x = position, y = minuslogp)) + 
+  geom_point() + 
+  labs(x = 'SNP ID', y = expression(paste('-log'[10],'(p-value)'))) + 
+  scale_x_continuous(labels = scales::comma)
+```
+
 ### LMM

@@ -257,11 +257,6 @@ y <- X[,'rs2476601'] + rnorm(n, 0, 1)
 head(y)
 ```
 
-Since this is a simulation, we know by design that our trait `y` depends on SNP rs2476601 and nothing else. We can use this information to check how well our methods are working. We'll refer to rs2476601 as the *causal SNP* from here on out.
-
-## Run GWAS
-
-In a real genetic study, we wouldn't know the location of the true causal SNP(s) beforehand, so we'd need to run a genome-wide association study to see if we can figure out which variants are associated with the trait. As we've discussed in class, the method we'll use for GWAS is *marginal regression*.
 
 ### Getting started
 
