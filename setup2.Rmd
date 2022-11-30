@@ -1,0 +1,242 @@
+---
+title: '494 final project'
+author: "Kristy Ma, Rita Li"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+# Install and Load Packages
+
+    if (!require("BiocManager", quietly = TRUE))
+        install.packages("BiocManager")
+    BiocManager::install("snpStats")
+
+```{r load-packages, message = F}
+library(snpStats)
+library(dplyr)
+library(ggplot2)
+library(broom)
+library(SNPRelate)
+library(GENESIS)
+library(GWASTools)
+```
+
+# Data preparation
+
+## load data
+
+```{r read data, cache=TRUE}
+fam <- './1_QC_GWAS/HapMap_3_r3_1.fam'
+bim <- './1_QC_GWAS/HapMap_3_r3_1.bim'
+bed <- './1_QC_GWAS/HapMap_3_r3_1.bed'
+hapmap <- read.plink(bed, bim, fam)
+```
+
+## LD pruning
+
+```{r prune snp}
+set.seed(494)
+genofile <- snpgdsOpen("lab2.gds")
+
+snpset <- snpgdsLDpruning(genofile, method="corr", slide.max.bp=10e6, 
+                          ld.threshold=sqrt(0.1), verbose=FALSE)
+pruned <- unlist(snpset, use.names=FALSE)
+length(pruned)  #101268(if seed)
+```
+
+```{r reformat hapmap data to extract independent snps}
+# delete non independent snps
+hapmap$genotypes<-hapmap$genotypes[,colnames(hapmap$genotypes) %in% pruned]  #dimension=165*101268
+hapmap$map <- hapmap$map[rownames(hapmap$map) %in% pruned, ]
+
+# remove mono from map
+maf <- col.summary(hapmap$genotypes)$MAF
+calls <- col.summary(hapmap$genotypes)$Call.rate
+
+hapmap$map <- hapmap$map %>%
+  mutate(MAF = maf) %>% filter(MAF > 0 & calls == 1)
+dim(hapmap$map)
+clean.snp <- rownames(hapmap$map)  #there are 77584 snps left, then 46781?
+
+
+# remove mono from genotypes
+hapmap$genotypes<-hapmap$genotypes[,colnames(hapmap$genotypes) %in% clean.snp]  # dim = 165*77584
+```
+
+
+# ```{r create gds file for cleaned hapmap data}
+# snpgdsCreateGeno("cleaned.gds", genmat = hapmap$genotypes,
+#     sample.id = hapmap$fam$member, snp.id = hapmap$map$snp.name,
+#     snp.chromosome = hapmap$map$chromosome,
+#     snp.position = hapmap$map$position,
+#     snp.allele = c(hapmap$map$allele.1,hapmap$map$allele.2), snpfirstdim=FALSE)
+# ```
+
+## separete corr, uncorr
+```{r separate people}
+Kingoutput <- snpgdsIBDKING(genofile)
+king.matrix <- Kingoutput$kinship
+
+
+sample.id <- Kingoutput$sample.id
+
+colnames(king.matrix) <- sample.id
+rownames(king.matrix) <- sample.id
+
+partition <- pcairPartition(kinobj = king.matrix ,divobj = king.matrix, )
+
+# 58 individuals
+related <- partition$rels
+
+# 107 uncorrelated individuals
+unrelated <- partition$unrels
+```
+
+## Explore correlated dataset (just hapmap itself!)
+
+Get info about correlated dataset:
+
+```{r explore-correlated_dataset}
+cor_geno <- hapmap$genotypes  # genotype information
+cor_fam <- hapmap$fam    #family information
+map <- hapmap$map    #SNPs information (can be used for both correlated and uncorrelated data set)
+```
+
+## Explore uncorrelated dataset (subsetting from the hapmap)
+
+```{r explore-uncorrelated-dataset}
+related.index <- c()
+a <- 1
+
+for (i in 1:165){
+  if (rownames(hapmap$genotypes[i,])%in%unrelated){
+    related.index[a] <- i
+    a <- a+1
+  }
+}
+
+uncor_geno <- hapmap$genotypes[related.index]  #genotype information
+uncor_fam <- hapmap$fam[rownames(hapmap$fam) %in% unrelated, ] #family information
+```
+
+## Shrinking SNP number
+```{r select first 500 snps}
+snp_list <- c()
+
+for(i in 1:10){
+  m <- map %>% 
+    filter(chromosome == i)
+  
+  chr_names <- m$snp.name
+
+  snp_list <- c(snp_list, chr_names[1:100])
+  
+}
+
+## correlated
+cor_geno <- cor_geno[,colnames(cor_geno) %in% snp_list]
+## uncorrelated
+uncor_geno <- uncor_geno[,colnames(uncor_geno) %in% snp_list]
+
+map <- map %>% 
+  filter(snp.name %in% colnames(cor_geno))
+```
+
+## Format genodata for LM + PCA
+```{r format geno data}
+# corr
+cor.geno <- as(cor_geno, "numeric")
+# nrow(cor.geno)
+# ncol(cor.geno)  this is 165*1000
+
+
+# uncorr
+uncor.geno <- as(uncor_geno, "numeric")
+# nrow(uncor.geno)
+# ncol(uncor.geno) this is 107*1000
+```
+
+
+## Simulate trait
+```{r}
+set.seed(123)
+
+# null y:corr
+y_cor_null <- rnorm(165, mean = 50, sd = 2)
+
+# null y: uncorr
+y_uncor_null <- rnorm(107, mean = 50, sd = 2)
+
+
+colnames(cor_geno[,50])
+colnames(cor_geno[,500])
+
+# associative y: corr (based on "rs10910097" and "rs6875672")
+y_cor_asso <- cor.geno[,"rs10910097"]*3 + cor.geno[,"rs6875672"] * 2 + rnorm(165, mean = 50, sd = 2)
+
+# associative y: uncorr
+y_uncor_asso <- uncor.geno[,"rs10910097"]*3 + uncor.geno[,"rs6875672"] * 2 + rnorm(107, mean = 50, sd = 2)
+```
+
+### write plink for LMM (GENESIS)
+```{r write plink}
+# snp.ids = colnames(cor_geno)
+# cor_geno_int <- substr(snp.ids, start = 3, stop = nchar(snp.ids))
+# cor_geno_gds <- cor_geno
+# colnames(cor_geno_gds) <- cor_geno_int
+## cor null
+write.plink(file.base="plinklmm_2/cor_null", 
+            snps= cor_geno,
+            subject.data=cor_fam, 
+            phenotype = as.numeric(y_cor_null), 
+            sex = as.numeric(cor_fam$sex),
+            snp.major=FALSE)
+
+fam <- 'plinklmm_2/cor_null.fam'
+bim <- 'plinklmm_2/cor_null.bim'
+bed <- 'plinklmm_2/cor_null.bed'
+
+snpgdsBED2GDS(bed, fam, bim, "plinklmm_2/cor_null.gds")
+
+## cor asso
+write.plink(file.base="plinklmm_2/cor_asso", 
+            snps=cor_geno,
+            subject.data=cor_fam, 
+            phenotype = as.numeric(y_cor_asso), 
+            sex = as.numeric(cor_fam$sex),
+            snp.major=FALSE)
+
+fam <- 'plinklmm_2/cor_asso.fam'
+bim <- 'plinklmm_2/cor_asso.bim'
+bed <- 'plinklmm_2/cor_asso.bed'
+
+snpgdsBED2GDS(bed, fam, bim, "plinklmm_2/cor_asso.gds")
+
+## uncor null
+write.plink(file.base="plinklmm_2/uncor_null", 
+            snps=uncor_geno,
+            subject.data=uncor_fam, 
+            phenotype = as.numeric(y_uncor_null), 
+            sex = as.numeric(uncor_fam$sex),
+            snp.major=FALSE)
+
+fam <- 'plinklmm_2/uncor_null.fam'
+bim <- 'plinklmm_2/uncor_null.bim'
+bed <- 'plinklmm_2/uncor_null.bed'
+
+snpgdsBED2GDS(bed, fam, bim, "plinklmm_2/uncor_null.gds")
+
+## uncor asso
+write.plink(file.base="plinklmm_2/uncor_asso", 
+            snps=uncor_geno,
+            subject.data=uncor_fam, 
+            phenotype = as.numeric(y_uncor_asso), 
+            sex = as.numeric(uncor_fam$sex),
+            snp.major=FALSE)
+
+fam <- 'plinklmm_2/uncor_asso.fam'
+bim <- 'plinklmm_2/uncor_asso.bim'
+bed <- 'plinklmm_2/uncor_asso.bed'
+
+snpgdsBED2GDS(bed, fam, bim, "plinklmm_2/uncor_asso.gds")
+```
