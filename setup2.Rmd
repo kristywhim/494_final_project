@@ -34,7 +34,7 @@ hapmap <- read.plink(bed, bim, fam)
 
 ## LD pruning
 
-```{r prune snp}
+```{r prune snp, cache = TRUE}
 set.seed(494)
 genofile <- snpgdsOpen("lab2.gds")
 
@@ -56,8 +56,7 @@ calls <- col.summary(hapmap$genotypes)$Call.rate
 hapmap$map <- hapmap$map %>%
   mutate(MAF = maf) %>% filter(MAF > 0 & calls == 1)
 dim(hapmap$map)
-clean.snp <- rownames(hapmap$map)  #there are 77584 snps left, then 46781?
-
+clean.snp <- rownames(hapmap$map) 
 
 # remove mono from genotypes
 hapmap$genotypes<-hapmap$genotypes[,colnames(hapmap$genotypes) %in% clean.snp]  # dim = 165*77584
@@ -167,9 +166,8 @@ y_cor_null <- rnorm(165, mean = 50, sd = 2)
 # null y: uncorr
 y_uncor_null <- rnorm(107, mean = 50, sd = 2)
 
-
-colnames(cor_geno[,50])
-colnames(cor_geno[,500])
+# colnames(cor_geno[,50])
+# colnames(cor_geno[,500])
 
 # associative y: corr (based on "rs10910097" and "rs6875672")
 y_cor_asso <- cor.geno[,"rs10910097"]*3 + cor.geno[,"rs6875672"] * 2 + rnorm(165, mean = 50, sd = 2)
