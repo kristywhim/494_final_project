@@ -244,15 +244,7 @@ hapmap$map %>%
   filter(snp.name == 'rs2476601')
 ```
 
-We can learn more about this SNP by searching the `dbSNP` database: <https://www.ncbi.nlm.nih.gov/snp/>. Enter the rsID (the SNP's name) into the dbSNP search bar and see what you can learn. Summarize your findings here:
 
-> "alleles A\>G,T": the most prevalent allele is A and then G or T. There are three possible variation on this snp.
->
-> "Gene: PTPN22 ([Varview](https://www.ncbi.nlm.nih.gov/variation/view/?q=rs2476601)), AP4B1-AS1 ([Varview](https://www.ncbi.nlm.nih.gov/variation/view/?q=rs2476601))": these two are the genes related to this snp.
->
-> "Clinical significance: benign, risk factor": it can be a benign risk factor
->
-> "A=0.115/69 (NorthernSweden)": in northern sweden pop, the frequency of A is 0.115 out of 69 persons.
 
 Now, let's create a quantitative trait `y` that depends on the genotype at this SNP plus some random noise:
 
@@ -276,24 +268,6 @@ mod4 <- lm(y ~ X[,4])
 mod5 <- lm(y ~ X[,5])
 ```
 
-```{r summarize-initial-models}
-## look at the model summaries
-tidy(mod1)
-tidy(mod2)
-tidy(mod3)
-tidy(mod4)
-tidy(mod5)
-```
-
-Do you notice anything weird about the 1st and 3rd SNPs? What do you think is going on here?
-
-> 1st and 3rd snps are monomorphic. Therefore the the matrix X columns' are linearly dependent. That's why we can only estimate intercept but not beta1.
-
-**Stop and discuss this question with your table before you move on.**
-
-### Remove monomorphic SNPs
-
-We're not going to get any useful information from any of these monomorphic SNPs, so let's remove them. We can remove these SNPs from the `map` data frame with a `filter` statement: fill in the blanks (\_\_\_) below and then run this code chunk.
 
 ```{r remove-mono-from-map}
 # keep only those SNPs with MAF > 0
@@ -302,11 +276,6 @@ map.clean <- hapmap$map %>%
 nrow(map.clean)
 ```
 
-How many SNPs are left after filtering? How many did we remove?
-
-> 1283751 left.
-
-Now, let's remove these monomorphic SNPs from our genotype matrix (`X`). Since we're working with a matrix here instead of a data frame, we can't use the `filter` function. Here's one way to remove the columns corresponding to the monomorphic SNPs from `X`:
 
 ```{r remove-mono-from-genotypes}
 # create vector of which SNPs have a MAF of 0
@@ -378,35 +347,11 @@ chr1.results <- chr1.results %>%
 head(chr1.results)
 ```
 
-Now we're ready to plot our results! We'd like to get a visual of which SNPs have small p-values (suggesting a possible association between the SNP and the trait). To start, create a scatterplot of the p-value of each SNP versus its position along the chromosome.
-
-```{r plot-pvals}
-ggplot(chr1.results, aes(x=position, y=P.Value))+geom_point()
-```
-
-What do you think? How well can you tell from this plot which SNPs have small p-values?
-
-> The visualization is really bad here. The p-values are very small, making it hard to visualize.
-
-One way to improve this visualization is to apply a log transformation to the p-values. When we have lots of numbers squished into a small range (0 to 1, in this case), a log transformation can be a nice way to spread these out. Try plotting the log (base 10) of the p-values for each SNP instead.
-
-```{r plot-log-pvals}
-ggplot(chr1.results, aes(x=position, y=log(P.Value)))+geom_point()
-```
-
-What do you notice now? Are the SNPs with small p-values the ones with small (more negative) values or large (closer to 0) values on the log base 10 scale?
-
-> Much more clear view. SNPs with small p-values have small values (really negative ones!)
-
-A traditional Manhattan plot uses a negative log transformation instead. Try plotting the $-log_{10}$ p-values now:
 
 ```{r plot-minus-log-pvals}
 ggplot(chr1.results, aes(x=position, y=-log(P.Value)))+geom_point()
 ```
 
-What similarities do you notice between this plot and the Manhattan plots we've seen before? What differences do you notice? Discuss with your table.
-
-> Very similar! Now, the SNPs with small p-values are on the top of the plot (with greater -log(P-val).) I don't understand the discrepancy in the middle.
 
 ### Analyze all chromosomes
 
@@ -459,10 +404,3 @@ head(chr3.results)
 ggplot(chr3.results, aes(x=position, y=-log(P.Value)))+geom_point()
 ```
 
-## Speed up the computation
-
-The approach we've taken in this lab to implement marginal regression works, but it's not particularly efficient. Can you think of any ways that we could speed this up? Brainstorm some ideas with your group.
-
-> Make a for loop to loop through the snps by chromosome.
-
-Note: this could make an interesting project topic!

@@ -21,7 +21,7 @@ library(GWASTools)
 # cor_asso <- snpgdsOpen("./plinklmm/cor_asso.gds")      #4
 ```
 
-This document is used to run models for four dataset. For uncor dataset, there are 107 people; For cor dataset, there are 165 people. And there are 500 snps to do GWAS.
+This document is used to run models for four dataset. For uncor dataset, there are 107 people; For cor dataset, there are 165 people. And there are 1000 snps to do GWAS.
 
 # Run model on uncorrelated data
 
@@ -35,7 +35,7 @@ tstats <- c()
 pvals <- c()
 
 # loop through chromosome 1 SNPs
-for(i in 1:500){
+for(i in 1:1000){
   # print out occasional updates telling us what SNP we're analyzing
   if(i %% 100 == 0) print(paste('Analyzing SNP', i)) 
   # fit model
@@ -58,8 +58,8 @@ result1 <- colnames(uncor.geno) %>%
 # Manhattan
 result1 %>%
   mutate(minuslogp = -log10(P.Value),
-         snp.id = result$.,
-         position = seq(500)) %>%
+         snp.id = result1$.,
+         position = seq(1000)) %>%
   ggplot(aes(x = position, y = minuslogp)) + 
   geom_point() + 
   labs(x = 'SNP ID', y = expression(paste('-log'[10],'(p-value)'))) + 
@@ -70,10 +70,10 @@ result1 %>%
 
 ```{r uncorr-null-LMM}
 # Step1: read in
-geno1 <- GdsGenotypeReader(filename = "./plinklmm/uncor_null.gds")
+geno1 <- GdsGenotypeReader(filename = "./plinklmm_1/uncor_null.gds")
 geno1 <- GenotypeData(geno1)
 
-snpgdsClose(geno1)
+
 
 
 # Step2: King matrix
@@ -105,18 +105,18 @@ scanAnnot <- ScanAnnotationDataFrame(mydat)
 
 # step 7 fit null model
 nullmod1 <- fitNullModel(scanAnnot, outcome = "pheno", 
-                         covars = NULL,
+                         covars = "pc1",
                         cov.mat = myGRM1, family = "gaussian")
 
 # step 5 run snp association test(LMM marginal regression)
-genoIterator <- GenotypeBlockIterator(hapmap_geno1, snpBlock=500)
+genoIterator <- GenotypeBlockIterator(hapmap_geno1, snpBlock=1000)
 
 assoc1 <- assocTestSingle(genoIterator, null.model = nullmod1,
                          BPPARAM = BiocParallel::SerialParam())
 
-manhattanPlot(result1$P.Value, rep(1,500), ylim = c(0, 7), trunc.lines = FALSE, signif = 1e-4, thinThreshold=NULL, pointsPerBin=10000, col=NULL)   
+manhattanPlot(result1$P.Value, rep(1,1000), ylim = c(0, 7), trunc.lines = FALSE, signif = 1e-4, thinThreshold=NULL, pointsPerBin=10000, col=NULL)   
 
-manhattanPlot(assoc1$Score.pval, rep(1,500), ylim = c(0, 7), trunc.lines = FALSE, signif = 1e-4, thinThreshold=NULL, pointsPerBin=10000, col=NULL) 
+manhattanPlot(assoc1$Score.pval, rep(1,999), ylim = c(0, 7), trunc.lines = FALSE, signif = 1e-4, thinThreshold=NULL, pointsPerBin=10000, col=NULL) 
 ```
 
 
@@ -130,7 +130,7 @@ tstats <- c()
 pvals <- c()
 
 # loop through chromosome 1 SNPs
-for(i in 1:500){
+for(i in 1:1000){
   # print out occasional updates telling us what SNP we're analyzing
   if(i %% 100 == 0) print(paste('Analyzing SNP', i)) 
   # fit model
@@ -153,8 +153,8 @@ result2 <- colnames(uncor.geno) %>%
 # Manhattan
 result2 %>%
   mutate(minuslogp = -log10(P.Value),
-         snp.id = result$.,
-         position = seq(500)) %>%
+         snp.id = result2$.,
+         position = seq(1000)) %>%
   ggplot(aes(x = position, y = minuslogp)) + 
   geom_point() + 
   labs(x = 'SNP ID', y = expression(paste('-log'[10],'(p-value)'))) + 
@@ -165,7 +165,7 @@ result2 %>%
 
 ```{r uncorr-asso-LMM}
 # Step1: read in
-geno2 <- GdsGenotypeReader(filename = "./plinklmm/uncor_asso.gds")
+geno2 <- GdsGenotypeReader(filename = "./plinklmm_1/uncor_asso.gds")
 
 geno2 <- GenotypeData(geno2)
 
@@ -198,18 +198,18 @@ scanAnnot2 <- ScanAnnotationDataFrame(mydat2)
 
 # step 7 fit null model
 nullmod2 <- fitNullModel(scanAnnot2, outcome = "pheno", 
-                         covars = NULL,
+                         covars = "pc1",
                         cov.mat = myGRM2, family = "gaussian")
 
 # step 5 run snp association test(LMM marginal regression)
-genoIterator <- GenotypeBlockIterator(hapmap_geno2, snpBlock=500)
+genoIterator <- GenotypeBlockIterator(hapmap_geno2, snpBlock=1000)
 
 assoc2 <- assocTestSingle(genoIterator, null.model = nullmod2,
                          BPPARAM = BiocParallel::SerialParam())
 
-manhattanPlot(result$P.Value, rep(1,500), ylim = c(0, 7), trunc.lines = FALSE, signif = 1e-4, thinThreshold=NULL, pointsPerBin=10000, col=NULL)   
+manhattanPlot(result2$P.Value, rep(1,1000), ylim = c(0, 7), trunc.lines = FALSE, signif = 1e-4, thinThreshold=NULL, pointsPerBin=10000, col=NULL)   
 
-manhattanPlot(assoc2$Score.pval, rep(1,500), ylim = c(0, 7), trunc.lines = FALSE, signif = 1e-4, thinThreshold=NULL, pointsPerBin=10000, col=NULL)   
+manhattanPlot(assoc2$Score.pval, rep(1,999), ylim = c(0, 7), trunc.lines = FALSE, signif = 1e-4, thinThreshold=NULL, pointsPerBin=10000, col=NULL)   
 ```
 
 
@@ -229,7 +229,7 @@ tstats <- c()
 pvals <- c()
 
 # loop through chromosome 1 SNPs
-for(i in 1:500){
+for(i in 1:1000){
   # print out occasional updates telling us what SNP we're analyzing
   if(i %% 100 == 0) print(paste('Analyzing SNP', i)) 
   # fit model
@@ -252,8 +252,8 @@ result3 <- colnames(cor.geno) %>%
 # Manhattan
 result3 %>%
   mutate(minuslogp = -log10(P.Value),
-         snp.id = result$.,
-         position = seq(500)) %>%
+         snp.id = result3$.,
+         position = seq(1000)) %>%
   ggplot(aes(x = position, y = minuslogp)) + 
   geom_point() + 
   labs(x = 'SNP ID', y = expression(paste('-log'[10],'(p-value)'))) + 
@@ -266,7 +266,7 @@ result3 %>%
 
 ```{r corr-NULL-LMM}
 # Step1: read in
-geno3 <- GdsGenotypeReader(filename = "./plinklmm/cor_null.gds")
+geno3 <- GdsGenotypeReader(filename = "./plinklmm_1/cor_null.gds")
 geno3 <- GenotypeData(geno3)
 
 
@@ -299,18 +299,18 @@ scanAnnot3 <- ScanAnnotationDataFrame(mydat3)
 
 # step 7 fit null model
 nullmod3 <- fitNullModel(scanAnnot3, outcome = "pheno", 
-                         covars = NULL,
+                         covars = "pc1",
                         cov.mat = myGRM3, family = "gaussian")
 
 # step 5 run snp association test(LMM marginal regression)
-genoIterator <- GenotypeBlockIterator(hapmap_geno3, snpBlock=500)
+genoIterator <- GenotypeBlockIterator(hapmap_geno3, snpBlock=1000)
 
 assoc3 <- assocTestSingle(genoIterator, null.model = nullmod3,
                          BPPARAM = BiocParallel::SerialParam())
 
-manhattanPlot(result3$P.Value, rep(1,500), ylim = c(0, 7), trunc.lines = FALSE, signif = 1e-4, thinThreshold=NULL, pointsPerBin=10000, col=NULL)   
+manhattanPlot(result3$P.Value, rep(1,1000), ylim = c(0, 7), trunc.lines = FALSE, signif = 1e-4, thinThreshold=NULL, pointsPerBin=10000, col=NULL)   
 
-manhattanPlot(assoc3$Score.pval, rep(1,500), ylim = c(0, 7), trunc.lines = FALSE, signif = 1e-4, thinThreshold=NULL, pointsPerBin=10000, col=NULL)   
+manhattanPlot(assoc3$Score.pval, rep(1,1000), ylim = c(0, 7), trunc.lines = FALSE, signif = 1e-4, thinThreshold=NULL, pointsPerBin=10000, col=NULL)   
 ```
 
 
@@ -328,7 +328,7 @@ tstats <- c()
 pvals <- c()
 
 # loop through chromosome 1 SNPs
-for(i in 1:500){
+for(i in 1:1000){
   # print out occasional updates telling us what SNP we're analyzing
   if(i %% 100 == 0) print(paste('Analyzing SNP', i)) 
   # fit model
@@ -351,8 +351,8 @@ result4 <- colnames(cor.geno) %>%
 # Manhattan
 result4 %>%
   mutate(minuslogp = -log10(P.Value),
-         snp.id = result$.,
-         position = seq(500)) %>%
+         snp.id = result4$.,
+         position = seq(1000)) %>%
   ggplot(aes(x = position, y = minuslogp)) + 
   geom_point() + 
   labs(x = 'SNP ID', y = expression(paste('-log'[10],'(p-value)'))) + 
@@ -363,7 +363,7 @@ result4 %>%
 
 ```{r corr-asso-LMM}
 # Step1: read in
-geno4 <- GdsGenotypeReader(filename = "./plinklmm/cor_asso.gds")
+geno4 <- GdsGenotypeReader(filename = "./plinklmm_1/cor_asso.gds")
 geno4 <- GenotypeData(geno4)
 
 
@@ -400,41 +400,54 @@ nullmod4 <- fitNullModel(scanAnnot4, outcome = "pheno",
                         cov.mat = myGRM4, family = "gaussian")
 
 # step 5 run snp association test(LMM marginal regression)
-genoIterator <- GenotypeBlockIterator(hapmap_geno4, snpBlock=500)
+genoIterator <- GenotypeBlockIterator(hapmap_geno4, snpBlock=1000)
 
 assoc4 <- assocTestSingle(genoIterator, null.model = nullmod4,
                          BPPARAM = BiocParallel::SerialParam())
 
-manhattanPlot(result4$P.Value, rep(1,500), ylim = c(0, 7), trunc.lines = FALSE, signif = 1e-4, thinThreshold=NULL, pointsPerBin=10000, col=NULL)   
+manhattanPlot(result4$P.Value, rep(1,1000), ylim = c(0, 7), trunc.lines = FALSE, signif = 1e-4, thinThreshold=NULL, pointsPerBin=10000, col=NULL)   
 
-manhattanPlot(assoc4$Score.pval, rep(1,500), ylim = c(0, 7), trunc.lines = FALSE, signif = 1e-4, thinThreshold=NULL, pointsPerBin=10000, col=NULL)   
+manhattanPlot(assoc4$Score.pval, rep(1,1000), ylim = c(0, 7), trunc.lines = FALSE, signif = 1e-4, thinThreshold=NULL, pointsPerBin=10000, col=NULL)   
 ```
 
 # View qqplot
 ```{r}
+# uncorr null
+qqPlot(result1$P.Value, truncate = TRUE)
 qqPlot(assoc1$Score.pval, truncate = TRUE)
 
-qqPlot(result1$P.Value, truncate = TRUE)
-```
 
-```{r}
+# uncorr asso
+qqPlot(result2$P.Value, truncate = TRUE)
 qqPlot(assoc2$Score.pval, truncate = TRUE)
 
-qqPlot(result2$P.Value, truncate = TRUE)
-```
-
-```{r}
+# corr null
+qqPlot(result3$P.Value, truncate = TRUE)
 qqPlot(assoc3$Score.pval, truncate = TRUE)
 
-qqPlot(result3$P.Value, truncate = TRUE)
-```
-
-```{r}
-qqPlot(assoc4$Score.pval, truncate = TRUE)
-
+# corr asso
 qqPlot(result4$P.Value, truncate = TRUE)
+qqPlot(assoc4$Score.pval, truncate = TRUE)
 ```
 
+# Lambda GC
+```{r gc lambda value}
+library(gap)
+# uncorr null
+gc.lambda(result1$P.Value)
+gc.lambda(assoc1$Score.pval)
 
+# uncorr asso
+gc.lambda(result2$P.Value)
+gc.lambda(assoc2$Score.pval)
+
+# corr null
+gc.lambda(result3$P.Value)
+gc.lambda(assoc3$Score.pval)
+
+# corr asso
+gc.lambda(result4$P.Value)
+gc.lambda(assoc4$Score.pval)
+```
 
 
