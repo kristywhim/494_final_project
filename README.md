@@ -1,5 +1,8 @@
 # 494_final_project
-A collaborative investigation on genomic control by fitting Linear Mixed Model in correlated genetic data
+A collaborative investigation on genomic control by fitting Linear Mixed Model in correlated genetic data （Dec. 2022）
+
+Collaborator: Xiyu Li
+Advisor: Dr. Kelsey E. Grinde
 
 -  Poster:
 https://docs.google.com/presentation/d/e/2PACX-1vToClj-wxKmct0tEuOtLD4c1fwOtPd2ytoRVDNRIJxa9uHyLqJb9AI7eQHAbVecX6hKgZmHy6OkceNa/pub?start=false&loop=false&delayms=3000
