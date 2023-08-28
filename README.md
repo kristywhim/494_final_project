@@ -2,6 +2,7 @@
 A collaborative investigation on genomic control by fitting Linear Mixed Model in correlated genetic data （Dec. 2022）
 
 Collaborator: Xiyu Li
+
 Advisor: Dr. Kelsey E. Grinde
 
 -  Poster:
